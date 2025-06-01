@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infinite Runner Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    canvas {
+      background: skyblue;
+      display: block;
+      margin: 0 auto;
+    }
+    #game-container {
+      position: relative;
+      width: 800px;
+      margin: 0 auto;
+    }
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: red;
+      display: none;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 2;
+    }
+    #jump-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <button id="jump-btn">Jump</button>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="game-over">Game Over<br><small>Click to Restart</small></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const jumpButton = document.getElementById('jump-btn');
+
+    let hero, obstacles, gameSpeed, spawnTimer, gameOver;
+
+    function initGame() {
+      hero = {
+        x: 100,
+        y: 300,
+        width: 30,
+        height: 60,
+        dy: 0,
+        gravity: 0.5,
+        jumpStrength: -15,
+        onGround: true
+      };
+
+      obstacles = [];
+      gameSpeed = 3;
+      spawnTimer = 0;
+      gameOver = false;
+      document.getElementById('game-over').style.display = 'none';
+      gameLoop();
+    }
+
+    function spawnObstacle() {
+      let height = 60;
+      obstacles.push({
+        x: canvas.width,
+        y: canvas.height - height,
+        width: 30,
+        height: height,
+        draw: (ctx, obs) => {
+          // Draw tree trunk
+          ctx.fillStyle = '#8B4513';
+          ctx.fillRect(obs.x + 10, obs.y + obs.height - 20, 10, 20);
+
+          // Draw tree foliage
+          ctx.beginPath();
+          ctx.arc(obs.x + 15, obs.y + obs.height - 30, 15, 0, Math.PI * 2);
+          ctx.fillStyle = 'green';
+          ctx.fill();
+        }
+      });
+    }
+
+    const headImg = new Image();
+headImg.src = './girl.png';
+// This is a simple SVG head silhouette encoded in base64
+
+function drawHero() {
+  // Draw the head image instead of circle
+  
+
+  // Body
+  ctx.fillStyle = 'blue';
+  ctx.fillRect(hero.x + 5, hero.y + 20, 20, 30);
+
+  // Legs
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(hero.x + 10, hero.y + 50);
+  ctx.lineTo(hero.x + 10, hero.y + 60);
+  ctx.moveTo(hero.x + 20, hero.y + 50);
+  ctx.lineTo(hero.x + 20, hero.y + 60);
+  ctx.stroke();
+
+ctx.drawImage(headImg, hero.x + hero.width / 2 - 16, hero.y, 32, 32);
+}
+
+    function drawObstacles() {
+      for (let obs of obstacles) {
+        obs.draw(ctx, obs);
+      }
+    }
+
+    function updateObstacles() {
+      for (let obs of obstacles) {
+        obs.x -= gameSpeed;
+      }
+      obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
+    }
+
+    function checkCollision() {
+      for (let obs of obstacles) {
+        if (
+          hero.x < obs.x + obs.width &&
+          hero.x + hero.width > obs.x &&
+          hero.y + hero.height > obs.y
+        ) {
+          gameOver = true;
+          document.getElementById('game-over').style.display = 'block';
+        }
+      }
+    }
+
+    function updateHero() {
+      hero.dy += hero.gravity;
+      hero.y += hero.dy;
+
+      if (hero.y + hero.height >= canvas.height) {
+        hero.y = canvas.height - hero.height;
+        hero.dy = 0;
+        hero.onGround = true;
+      } else {
+        hero.onGround = false;
+      }
+    }
+
+    function gameLoop() {
+      if (gameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      spawnTimer++;
+      if (spawnTimer > 120) {
+        spawnObstacle();
+        spawnTimer = 0;
+      }
+
+      updateHero();
+      updateObstacles();
+      drawHero();
+      drawObstacles();
+      checkCollision();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    jumpButton.addEventListener('click', function () {
+      if (hero.onGround) {
+        hero.dy = hero.jumpStrength;
+      }
+    });
+
+    document.getElementById('game-over').addEventListener('click', initGame);
+
+    initGame();
+  </script>
+</body>
+</html>
